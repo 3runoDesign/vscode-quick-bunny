@@ -1,0 +1,124 @@
+{
+    "name": "quick-bunny",
+    "displayName": "QuickBunny",
+    "description": "Jump quickly between section markers in the code.",
+    "version": "0.1.0",
+    "publisher": "spywhere",
+    "icon": "images/icon.png",
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "configuration": {
+            "title": "QuickBunny",
+            "properties": {
+                "quickBunny.todoPatterns": {
+                    "type": "array",
+                    "default": [
+                        "//\\s*TODO:.*",
+                        "//\\s*FIXME:.*"
+                    ],
+                    "description": "Regex patterns for TODOs"
+                },
+                "quickBunny.notePatterns": {
+                    "type": "array",
+                    "default": [
+                        "//\\s*NOTE:.*",
+                        "//\\s*INFO:.*"
+                    ],
+                    "description": "Regex patterns for Notes"
+                },
+                "quickBunny.sectionPatterns": {
+                    "type": "array",
+                    "default": [
+                        "//\\s*SECTION:.*",
+                        "#\\s+.*"
+                    ],
+                    "description": "Regex patterns for Sections"
+                },
+                "quickBunny.showExplorerView": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the QuickBunny view in Explorer"
+                }
+            }
+        },
+        "views": {
+            "explorer": [
+                {
+                    "id": "quickBunnyView",
+                    "name": "QuickBunny",
+                    "when": "config.quickBunny.showExplorerView == true"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "quickBunny.jump",
+                "title": "QuickBunny: Jump to Mark"
+            },
+            {
+                "command": "quickBunny.refresh",
+                "title": "QuickBunny: Refresh"
+            },
+            {
+                "command": "quickBunny.reveal",
+                "title": "QuickBunny: Reveal Mark"
+            },
+            {
+                "command": "quickBunny.next",
+                "title": "QuickBunny: Go to Next Mark"
+            },
+            {
+                "command": "quickBunny.previous",
+                "title": "QuickBunny: Go to Previous Mark"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "quickBunny.jump",
+                "key": "ctrl+alt+j",
+                "mac": "cmd+alt+j",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "quickBunny.next",
+                "key": "ctrl+alt+n",
+                "mac": "cmd+alt+n",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "quickBunny.previous",
+                "key": "ctrl+alt+p",
+                "mac": "cmd+alt+p",
+                "when": "editorTextFocus"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src",
+        "test": "node ./out/test/runTest.js"
+    },
+    "dependencies": {
+        "regex": "^4.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@types/vscode": "^1.80.0",
+        "@typescript-eslint/eslint-plugin": "^7.0.0",
+        "@typescript-eslint/parser": "^7.0.0",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3"
+    }
+}
