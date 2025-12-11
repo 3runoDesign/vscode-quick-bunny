@@ -110,9 +110,7 @@
         "lint": "eslint src",
         "test": "node ./out/test/runTest.js"
     },
-    "dependencies": {
-        "regex": "^4.3.1"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@types/node": "^18.0.0",
         "@types/vscode": "^1.80.0",

@@ -754,11 +754,6 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-regex@^4.3.1:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/regex/-/regex-4.4.0.tgz#cb731e2819f230fad69089e1bd854fef7569e90a"
-  integrity sha512-uCUSuobNVeqUupowbdZub6ggI5/JZkYyJdDogddJr60L764oxC2pMZov1fQ3wM9bdyzUILDG+Sqx6NAKAz9rKQ==
-
 resolve-from@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/resolve-from/-/resolve-from-4.0.0.tgz#4abcd852ad32dd7baabfe9b40e00a36db5f392e6"
