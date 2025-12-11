@@ -1,37 +1,48 @@
 import * as vscode from "vscode";
 import { MarkScanner } from "../core/MarkScanner";
 import { MarkEntity } from "../domain/models";
+import { DecorationManager } from "./DecorationManager";
 import { StatusBarManager } from "./StatusBarManager";
 import { QuickBunnyTreeProvider } from "./TreeProvider";
 
+function flattenMarks(marks: MarkEntity[]): MarkEntity[] {
+    let result: MarkEntity[] = [];
+    marks.forEach((mark) => {
+        result.push(mark);
+        if (mark.children && mark.children.length > 0) {
+            result = result.concat(flattenMarks(mark.children));
+        }
+    });
+    return result;
+}
+
 export class MarkController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = [];
+    private updateTimeout: NodeJS.Timeout | undefined;
 
     constructor(
         private scanner: MarkScanner,
         private treeProvider: QuickBunnyTreeProvider,
-        private statusBar: StatusBarManager
+        private statusBar: StatusBarManager,
+        private decorationManager: DecorationManager
     ) {
         this.registerCommands();
         this.registerEvents();
     }
 
     private registerCommands() {
-        // Comando Principal (Menu)
         this.disposables.push(
             vscode.commands.registerCommand("quickBunny.jump", () =>
                 this.showJumpPicker()
             )
         );
 
-        // Atalho: Atualizar
         this.disposables.push(
             vscode.commands.registerCommand("quickBunny.refresh", () =>
                 this.refreshAll()
             )
         );
 
-        // Atalho: Revelar (usado pelo TreeView)
         this.disposables.push(
             vscode.commands.registerCommand(
                 "quickBunny.reveal",
@@ -43,7 +54,6 @@ export class MarkController implements vscode.Disposable {
             )
         );
 
-        // NOVO: Navegação Rápida (Shorts)
         this.disposables.push(
             vscode.commands.registerCommand("quickBunny.next", () =>
                 this.jumpToNeighbor("next")
@@ -56,45 +66,78 @@ export class MarkController implements vscode.Disposable {
         );
     }
 
-    // ... (Métodos registerEvents, refreshAll, showJumpPicker mantidos iguais) ...
+    private registerEvents() {
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(() => this.refreshAll())
+        );
+
+        this.disposables.push(
+            vscode.workspace.onDidSaveTextDocument(() => this.refreshAll())
+        );
+
+        this.disposables.push(
+            vscode.workspace.onDidChangeTextDocument((event) => {
+                if (
+                    vscode.window.activeTextEditor &&
+                    event.document === vscode.window.activeTextEditor.document
+                ) {
+                    this.triggerDebouncedUpdate();
+                }
+            })
+        );
+    }
 
     /**
-     * Lógica para encontrar o vizinho mais próximo
+     * Aguarda o usuário parar de digitar por 500ms antes de escanear.
+     * Isso evita lentidão no editor.
      */
+    private triggerDebouncedUpdate() {
+        if (this.updateTimeout) {
+            clearTimeout(this.updateTimeout);
+        }
+        this.updateTimeout = setTimeout(() => {
+            this.refreshAll();
+        }, 500);
+    }
+
+    private async refreshAll() {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            const marks = await this.scanner.scanDocument(editor.document);
+            this.statusBar.update(marks);
+            this.treeProvider.refresh(marks);
+
+            this.decorationManager.updateDecorations(editor, marks);
+        } else {
+            this.statusBar.hide();
+            this.treeProvider.refresh([]);
+        }
+    }
+
     private async jumpToNeighbor(direction: "next" | "prev") {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
 
-        // 1. Escaneia o documento atual
-        const marks = await this.scanner.scanDocument(editor.document);
-        if (marks.length === 0) return;
+        const rootMarks = await this.scanner.scanDocument(editor.document);
+        if (rootMarks.length === 0) return;
 
-        // 2. Descobre a linha atual do cursor
+        const flatMarks = flattenMarks(rootMarks);
+
         const currentLine = editor.selection.active.line;
-
-        // 3. Encontra o alvo
         let targetMark: MarkEntity | undefined;
 
         if (direction === "next") {
-            // Procura o primeiro mark que esteja DEPOIS da linha atual
-            targetMark = marks.find((m) => m.lineNumber > currentLine);
-
-            // Se não achar (está no fim), faz o loop para o primeiro (Carrossel)
-            if (!targetMark) targetMark = marks[0];
+            targetMark = flatMarks.find((m) => m.lineNumber > currentLine);
+            if (!targetMark) targetMark = flatMarks[0];
         } else {
-            // Procura o marks que estão ANTES da linha atual e pega o último deles
-            // Reverse é usado para facilitar pegar o "mais próximo" subindo
-            const prevMarks = marks.filter((m) => m.lineNumber < currentLine);
+            const prevMarks = flatMarks.filter(
+                (m) => m.lineNumber < currentLine
+            );
             targetMark = prevMarks[prevMarks.length - 1];
-
-            // Se não achar (está no início), faz o loop para o último (Carrossel)
-            if (!targetMark) targetMark = marks[marks.length - 1];
+            if (!targetMark) targetMark = flatMarks[flatMarks.length - 1];
         }
 
-        // 4. Pula para o alvo
-        if (targetMark) {
-            this.revealMark(editor, targetMark);
-        }
+        if (targetMark) this.revealMark(editor, targetMark);
     }
 
     private revealMark(editor: vscode.TextEditor, mark: MarkEntity) {
@@ -105,40 +148,12 @@ export class MarkController implements vscode.Disposable {
         editor.revealRange(mark.range, vscode.TextEditorRevealType.InCenter);
     }
 
-    // ... (restante dos métodos auxiliares e dispose) ...
-
-    // Certifique-se de manter o método getIconForType ou movê-lo para um helper se necessário
     private getIconForType(type: string): string {
-        switch (type) {
-            case "todo":
-                return "pencil";
-            case "note":
-                return "book";
-            case "section":
-                return "list-unordered";
-            default:
-                return "circle-filled";
-        }
-    }
-
-    // ...
-    private registerEvents() {
-        // Atualiza UI quando muda o editor
-        this.disposables.push(
-            vscode.window.onDidChangeActiveTextEditor(() => this.refreshAll()),
-            vscode.workspace.onDidSaveTextDocument(() => this.refreshAll())
-        );
-    }
-
-    private async refreshAll() {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            const marks = await this.scanner.scanDocument(editor.document);
-            this.statusBar.update(marks);
-            this.treeProvider.refresh(marks);
-        } else {
-            this.statusBar.hide();
-        }
+        const t = type.toUpperCase();
+        if (["TODO", "FIXME", "BUG"].includes(t)) return "alert";
+        if (["NOTE", "INFO"].includes(t)) return "info";
+        if (["SECTION", "MARK"].includes(t)) return "list-unordered";
+        return "tag";
     }
 
     private async showJumpPicker() {
@@ -147,7 +162,6 @@ export class MarkController implements vscode.Disposable {
 
         const marks = await this.scanner.scanDocument(editor.document);
 
-        // Interface auxiliar para tipagem segura
         interface MarkQuickPickItem extends vscode.QuickPickItem {
             markData: MarkEntity;
         }
@@ -170,5 +184,9 @@ export class MarkController implements vscode.Disposable {
 
     dispose() {
         this.disposables.forEach((d) => d.dispose());
+        if (this.updateTimeout) {
+            clearTimeout(this.updateTimeout);
+        }
+        this.decorationManager.dispose();
     }
 }

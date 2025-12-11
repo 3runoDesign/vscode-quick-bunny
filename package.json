@@ -2,7 +2,7 @@
     "name": "quick-bunny",
     "displayName": "QuickBunny",
     "description": "Jump quickly between section markers in the code.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "spywhere",
     "icon": "images/icon.png",
     "engines": {
@@ -12,61 +12,72 @@
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "onStartupFinished"
     ],
     "main": "./out/extension",
     "contributes": {
-        "configuration": {
-            "title": "QuickBunny",
-            "properties": {
-                "quickBunny.todoPatterns": {
-                    "type": "array",
-                    "default": [
-                        "//\\s*TODO:.*",
-                        "//\\s*FIXME:.*"
-                    ],
-                    "description": "Regex patterns for TODOs"
-                },
-                "quickBunny.notePatterns": {
-                    "type": "array",
-                    "default": [
-                        "//\\s*NOTE:.*",
-                        "//\\s*INFO:.*"
-                    ],
-                    "description": "Regex patterns for Notes"
-                },
-                "quickBunny.sectionPatterns": {
-                    "type": "array",
-                    "default": [
-                        "//\\s*SECTION:.*",
-                        "#\\s+.*"
-                    ],
-                    "description": "Regex patterns for Sections"
-                },
-                "quickBunny.showExplorerView": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show the QuickBunny view in Explorer"
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "quickBunny-sidebar",
+                    "title": "QuickBunny",
+                    "icon": "images/quick-bunny-container.svg"
                 }
-            }
+            ]
         },
         "views": {
-            "explorer": [
+            "quickBunny-sidebar": [
                 {
                     "id": "quickBunnyView",
-                    "name": "QuickBunny",
+                    "name": "%quickBunny.view.title%",
+                    "icon": "images/icon.png",
                     "when": "config.quickBunny.showExplorerView == true"
                 }
             ]
         },
+        "configuration": {
+            "title": "QuickBunny",
+            "properties": {
+                "quickBunny.tags": {
+                    "type": "array",
+                    "default": [
+                        "TODO",
+                        "FIXME",
+                        "NOTE",
+                        "BUG",
+                        "HACK",
+                        "SECTION",
+                        "MARK",
+                        "REVIEW"
+                    ],
+                    "description": "%quickBunny.config.tags%"
+                },
+                "quickBunny.showExplorerView": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the QuickBunny view"
+                },
+                "quickBunny.decorations.showHeaders": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the divider line above MARK/SECTION"
+                },
+                "quickBunny.decorations.showBackgrounds": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show background color for TODO/FIXME badges"
+                }
+            }
+        },
         "commands": [
             {
                 "command": "quickBunny.jump",
-                "title": "QuickBunny: Jump to Mark"
+                "title": "%quickBunny.cmd.jump%"
             },
             {
                 "command": "quickBunny.refresh",
-                "title": "QuickBunny: Refresh"
+                "title": "%quickBunny.cmd.refresh%",
+                "icon": "$(refresh)"
             },
             {
                 "command": "quickBunny.reveal",
@@ -81,6 +92,15 @@
                 "title": "QuickBunny: Go to Previous Mark"
             }
         ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "quickBunny.refresh",
+                    "when": "view == quickBunnyView",
+                    "group": "navigation"
+                }
+            ]
+        },
         "keybindings": [
             {
                 "command": "quickBunny.jump",

@@ -1,9 +1,7 @@
 import * as vscode from "vscode";
 
-// Aqui está o MarkType
-export type MarkType = "section" | "todo" | "note";
+export type MarkType = string;
 
-// Aqui está a interface MarkEntity
 export interface MarkEntity {
     id: string;
     uri: vscode.Uri;
@@ -14,6 +12,7 @@ export interface MarkEntity {
     description: string;
     headingLevel?: number;
     writer?: string;
+    children?: MarkEntity[];
 }
 
 export interface ScanOptions {

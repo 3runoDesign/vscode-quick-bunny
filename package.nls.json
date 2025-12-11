@@ -1,0 +1,6 @@
+{
+    "quickBunny.view.title": "Marks",
+    "quickBunny.config.tags": "List of tags to search for (e.g. TODO, FIXME)",
+    "quickBunny.cmd.jump": "Jump to Mark",
+    "quickBunny.cmd.refresh": "Refresh List"
+}
